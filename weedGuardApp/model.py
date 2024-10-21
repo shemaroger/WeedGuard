@@ -1,9 +1,9 @@
 import os
 import sys
 import tensorflow as tf
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras import layers, models
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator # type: ignore
+from tensorflow.keras import layers, models # type: ignore
+from tensorflow.keras.optimizers import Adam # type: ignore
 
 # Fix for Windows encoding issues (UTF-8)
 if os.name == 'nt':
