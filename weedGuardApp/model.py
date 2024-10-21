@@ -74,4 +74,4 @@ test_loss, test_acc = model.evaluate(test_generator)
 print(f'Test Accuracy: {test_acc}')
 
 # Save the model
-model.save('my_trained_model.pkl')
+model.save('my_trained_model.h5')
