@@ -10,7 +10,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 
 # Load the pre-trained model (make sure the path is correct)
-model_path = os.path.join(settings.BASE_DIR, 'my_trained_model.h5')
+model_path = os.path.join(settings.BASE_DIR, 'D:\Project\WeedGuard\my_trained_model.h5')
 model = load_model(model_path)
 
 # Define image dimensions (must match what you used in training)
@@ -45,4 +45,8 @@ def classify_image(request):
         })
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def upload_image(request):
+
+    return render(request, 'weedGuardApp/upload_image.html')
 
