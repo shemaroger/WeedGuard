@@ -12,31 +12,32 @@
         <h2 class="text-center">Upload Image for Classification</h2>
         <div class="row justify-content-center">
             <div class="col-md-6">
+                <!-- Image Upload Form -->
                 <form id="upload-form" enctype="multipart/form-data" method="POST" action="{% url 'classify_image' %}">
                     {% csrf_token %}
                     <div class="form-group mb-3">
                         <label for="file">Choose an image:</label>
-                        <input type="file" class="form-control" id="file" name="file" required>
+                        <input type="file" class="form-control" id="file" name="file" accept="image/*" required>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Classify Image</button>
                 </form>
 
                 <!-- Result will be displayed here -->
-                <div class="mt-4" id="result">
-                    <!-- Classification result will appear here -->
-                </div>
+                <div class="mt-4" id="result"></div>
             </div>
         </div>
     </div>
 
+    <!-- jQuery (required for Ajax functionality) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
     <script>
         // Handle form submission via AJAX
         $(document).ready(function(){
             $('#upload-form').on('submit', function(e) {
-                e.preventDefault();
+                e.preventDefault(); // Prevent normal form submission
 
-                // Create a FormData object
+                // Create a FormData object to send the image and CSRF token
                 var formData = new FormData(this);
 
                 // Send the form data to the server via AJAX
@@ -44,8 +45,8 @@
                     type: 'POST',
                     url: $(this).attr('action'),
                     data: formData,
-                    processData: false,
-                    contentType: false,
+                    processData: false,  // Prevent jQuery from automatically processing the data
+                    contentType: false,  // Let the browser set the content type to multipart/form-data
                     success: function(response) {
                         // Display the classification result
                         $('#result').html(`
@@ -55,9 +56,10 @@
                             </div>
                         `);
                     },
-                    error: function() {
-                        // Handle errors
+                    error: function(xhr, status, error) {
+                        // Handle errors (e.g., invalid file type, server error)
                         $('#result').html('<div class="alert alert-danger">An error occurred. Please try again.</div>');
+                        console.error("Error: ", status, error);
                     }
                 });
             });
