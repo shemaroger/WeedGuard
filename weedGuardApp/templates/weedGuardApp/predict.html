@@ -1,130 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WeedGuard Prediction</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeedGuard - Predict</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      text-align: center;
+      color: #0056b3;
+    }
+
+    #camera-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    video,
+    img,
+    canvas {
+      max-width: 100%;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+
+    .form-container {
+      width: 100%;
+      max-width: 500px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-top: 20px;
+    }
+
+    .form-container input {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      font-size: 16px;
+    }
+
+    .form-container label {
+      font-size: 14px;
+      margin-bottom: 6px;
+      display: inline-block;
+    }
+
+    #error-message {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+      display: none;
+    }
+
+    #submit-button {
+      margin-top: 20px;
+    }
+
+    .upload-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .upload-container input {
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      .form-container {
+        padding: 15px;
+        margin-top: 10px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      button {
+        padding: 10px 16px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-    <h1>Upload or Take a Picture for Weed Detection</h1>
+  <h1>WeedGuard - Image Prediction</h1>
 
-    <!-- Form for Uploading or Taking a Picture -->
-    <form id="uploadForm" enctype="multipart/form-data" method="post" action="{% url 'predict' %}">
-        {% csrf_token %}
-        
-        <!-- Dropdown to choose source -->
-        <label for="image-source">Select Source:</label>
-        <select id="image-source">
-            <option value="upload">Upload from Computer</option>
-            <option value="camera">Take a Picture</option>
-        </select><br><br>
-        
-        <!-- File input for uploading an image -->
-        <label for="image">Image:</label>
-        <input type="file" id="image" name="image" accept="image/*" required>
-        
-        <!-- Camera view and capture button -->
-        <div id="camera-input" style="display: none;">
-            <video id="camera-view" autoplay></video>
-            <button type="button" id="capture-btn">Capture</button>
-            <canvas id="camera-canvas" style="display: none;"></canvas>
-        </div>
+  <div id="camera-container">
+    <video id="camera" autoplay></video>
+    <button id="capture-button">Capture Image</button>
+    <canvas id="canvas" style="display: none;"></canvas>
+  </div>
 
-        <!-- Additional Information -->
-        <label for="location">GPS Location:</label>
-        <input type="text" id="location" name="location" placeholder="Enter GPS coordinates"><br><br>
+  <div class="upload-container">
+    <input type="file" id="upload" accept="image/*">
+    <img id="preview" style="display: none; max-width: 100%; margin-top: 10px;">
+  </div>
 
-        <label for="site_name">Site Name:</label>
-        <input type="text" id="site_name" name="site_name" placeholder="Enter site name"><br><br>
+  <div id="error-message">Image lacks sufficient green color!</div>
 
-        <label for="farmer">Farmer Name:</label>
-        <input type="text" id="farmer" name="farmer" placeholder="Enter farmer's name"><br><br>
+  <div class="form-container">
+    <form id="submit-form" method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="file" name="image" id="hidden-file-input" style="display: none;">
+      <label for="location">GPS Location:</label>
+      <input type="text" id="location" name="location" placeholder="Enter GPS coordinates" required>
 
-        <!-- Submit Button -->
-        <button type="submit">Predict</button>
+      <label for="site_name">Site Name:</label>
+      <input type="text" id="site_name" name="site_name" placeholder="Enter site name" required>
+
+      <label for="farmer">Farmer Name:</label>
+      <input type="text" id="farmer" name="farmer" placeholder="Enter farmer's name" required>
+
+      <button id="submit-button" disabled>Submit</button>
     </form>
+  </div>
 
-    <div id="result"></div>
+  <script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('canvas');
+    const captureButton = document.getElementById('capture-button');
+    const uploadInput = document.getElementById('upload');
+    const preview = document.getElementById('preview');
+    const errorMessage = document.getElementById('error-message');
+    const submitButton = document.getElementById('submit-button');
+    const hiddenFileInput = document.getElementById('hidden-file-input');
+    const submitForm = document.getElementById('submit-form');
 
-    <!-- JavaScript -->
-    <script>
-        const imageSource = document.getElementById('image-source');
-        const imageInput = document.getElementById('image');
-        const cameraInput = document.getElementById('camera-input');
-        const cameraView = document.getElementById('camera-view');
-        const cameraCanvas = document.getElementById('camera-canvas');
-        const captureBtn = document.getElementById('capture-btn');
-        const form = document.getElementById('uploadForm');
-        const resultDiv = document.getElementById('result');
+    let stream;
 
-        // Toggle between upload and camera mode
-        imageSource.addEventListener('change', (e) => {
-            const selected = e.target.value;
-            if (selected === 'camera') {
-                cameraInput.style.display = 'block';
-                imageInput.style.display = 'none';
-                startCamera();
-            } else {
-                cameraInput.style.display = 'none';
-                imageInput.style.display = 'block';
-                stopCamera();
-            }
-        });
+    // Start camera on page load
+    async function startCamera() {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+    }
 
-        // Start the camera
-        async function startCamera() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                cameraView.srcObject = stream;
-            } catch (error) {
-                console.error("Camera access denied:", error);
-                alert("Unable to access camera. Please allow camera access.");
-            }
+    startCamera();
+
+    // Capture image from camera
+    captureButton.addEventListener('click', () => {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Stop camera after capture
+      stream.getTracks().forEach(track => track.stop());
+      video.style.display = 'none';
+
+      // Validate green color in real-time
+      validateGreenColor(canvas);
+
+      // Convert canvas to blob and populate hidden input
+      canvas.toBlob((blob) => {
+        const file = new File([blob], "captured_image.jpg", { type: "image/jpeg" });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        hiddenFileInput.files = dataTransfer.files;
+      });
+    });
+
+    // Handle image upload
+    uploadInput.addEventListener('change', () => {
+      const file = uploadInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+
+        // Load image to canvas for validation
+        const img = new Image();
+        img.onload = function () {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const context = canvas.getContext('2d');
+          context.drawImage(img, 0, 0);
+          validateGreenColor(canvas);
+        };
+        img.src = e.target.result;
+      };
+
+      reader.readAsDataURL(file);
+
+      // Populate hidden input for form submission
+      hiddenFileInput.files = uploadInput.files;
+    });
+
+    // Validate green color in the image
+    function validateGreenColor(canvas) {
+      const context = canvas.getContext('2d');
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      let greenPixels = 0;
+      let totalPixels = data.length / 4;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        // Check if pixel is "green"
+        if (g > r && g > b && g > 100) {
+          greenPixels++;
         }
+      }
 
-        // Stop the camera
-        function stopCamera() {
-            const stream = cameraView.srcObject;
-            if (stream) {
-                const tracks = stream.getTracks();
-                tracks.forEach(track => track.stop());
-            }
-            cameraView.srcObject = null;
-        }
-
-        // Capture the image from the camera
-        captureBtn.addEventListener('click', () => {
-            const context = cameraCanvas.getContext('2d');
-            cameraCanvas.width = cameraView.videoWidth;
-            cameraCanvas.height = cameraView.videoHeight;
-            context.drawImage(cameraView, 0, 0, cameraCanvas.width, cameraCanvas.height);
-
-            // Convert canvas to blob and set as file input
-            cameraCanvas.toBlob((blob) => {
-                const file = new File([blob], "captured_image.png", { type: "image/png" });
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                imageInput.files = dataTransfer.files; // Assign the captured image as the input file
-            });
-        });
-
-        // Submit the form and show results
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(form);
-
-            // Send the form data
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData,
-            });
-            const data = await response.json();
-            if (data.error) {
-                resultDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
-            } else {
-                resultDiv.innerHTML = `<h3>${data.prediction}</h3>`;
-            }
-        });
-    </script>
+      const greenRatio = greenPixels / totalPixels;
+      if (greenRatio < 0.1) { // Threshold for "green" validation
+        errorMessage.style.display = 'block';
+        submitButton.disabled = true;
+      } else {
+        errorMessage.style.display = 'none';
+        submitButton.disabled = false;
+      }
+    }
+  </script>
 </body>
+
 </html>
+ 
