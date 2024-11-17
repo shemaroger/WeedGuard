@@ -1,7 +1,7 @@
 # prediction/ml_model.py
 import joblib
 import numpy as np
-from tensorflow.keras.preprocessing import image
+from tensorflow.keras.preprocessing import image # type: ignore
 import tensorflow as tf
 import os
 
