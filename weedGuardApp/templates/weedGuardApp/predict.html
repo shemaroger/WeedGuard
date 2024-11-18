@@ -4,6 +4,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeedGuard - Select GPS Location</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: #f5f5f5;
+    }
+
+   
+  </style>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+
+<body>
+  <h1>WeedGuard - Select GPS Location</h1>
+
+  <!-- Map Container -->
+  <div id="map"></div>
+
+  <!-- Form -->
+  <div class="form-container">
+    <form id="location-form" method="POST">
+      {% csrf_token %}
+     
+
+      <button type="submit">Save Location</button>
+    </form>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2024 WeedGuard. All Rights Reserved.
+  </footer>
+
+  <script>
+   
+  </script>
+</body>
+
+</html>
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>WeedGuard - Predict</title>
   <style>
     * {
@@ -133,8 +187,7 @@
         padding: 10px 16px;
       }
     }
-
-    h1 {
+     h1 {
       margin: 20px;
       color: #0056b3;
     }
@@ -215,7 +268,7 @@
     <form id="submit-form" method="POST" enctype="multipart/form-data">
       {% csrf_token %}
       <input type="file" name="image" id="hidden-file-input" style="display: none;">
-      <label for="coordinates">Selected Coordinates:</label>
+       <label for="coordinates">Selected Coordinates:</label>
       <input type="text" id="coordinates" name="coordinates" placeholder="Fetching location..." readonly required>
 
       <label for="site_name">Site Name:</label>
@@ -227,8 +280,6 @@
       <button id="submit-button" disabled>Submit</button>
     </form>
   </div>
-
-  <div id="map"></div> <!-- Add map container -->
 
   <script>
     const video = document.getElementById('camera');
@@ -289,74 +340,102 @@
           canvas.width = img.width;
           canvas.height = img.height;
           const context = canvas.getContext('2d');
-          context.drawImage(img, 0, 0, img.width, img.height);
-
+          context.drawImage(img, 0, 0);
           validateGreenColor(canvas);
         };
         img.src = e.target.result;
       };
 
       reader.readAsDataURL(file);
+
+      // Populate hidden input for form submission
+      hiddenFileInput.files = uploadInput.files;
     });
 
-    // Validate presence of green color
+    // Validate green color in the image
     function validateGreenColor(canvas) {
       const context = canvas.getContext('2d');
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
-      let greenCount = 0;
-      let totalPixels = data.length / 4; // 4 for RGBA
+
+      let greenPixels = 0;
+      let totalPixels = data.length / 4;
 
       for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
 
-        if (g > r && g > b) {
-          greenCount++;
+        // Check if pixel is "green"
+        if (g > r && g > b && g > 100) {
+          greenPixels++;
         }
       }
 
-      if (greenCount / totalPixels > 0.1) { // if more than 10% of the pixels are green
-        errorMessage.style.display = 'none';
-        submitButton.disabled = false;
-      } else {
+      const greenRatio = greenPixels / totalPixels;
+      if (greenRatio < 0.1) { // Threshold for "green" validation
         errorMessage.style.display = 'block';
         submitButton.disabled = true;
+      } else {
+        errorMessage.style.display = 'none';
+        submitButton.disabled = false;
       }
     }
+     const map = L.map('map');
+    let marker;
 
-    // Initialize the map
-    function initMap() {
+    // Geolocation function to fetch user's current position
+    function fetchCurrentLocation() {
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          const map = new google.maps.Map(document.getElementById('map'), {
-            zoom: 14,
-            center: { lat, lng: lon },
-          });
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
 
-          const marker = new google.maps.Marker({
-            position: { lat, lng: lon },
-            map: map,
-          });
+            // Set map view to current location
+            map.setView([latitude, longitude], 13);
 
-          const coordinatesInput = document.getElementById('coordinates');
-          coordinatesInput.value = `${lat}, ${lon}`;
-        });
+            // Add marker to the current location
+            marker = L.marker([latitude, longitude], { draggable: true }).addTo(map);
+            document.getElementById('coordinates').value = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+
+            // Update coordinates on marker drag
+            marker.on('dragend', () => {
+              const newPosition = marker.getLatLng();
+              document.getElementById('coordinates').value = `${newPosition.lat.toFixed(6)}, ${newPosition.lng.toFixed(6)}`;
+            });
+          },
+          (error) => {
+            alert("Unable to fetch location. Please ensure location services are enabled.");
+            console.error(error);
+          }
+        );
+      } else {
+        alert("Geolocation is not supported by your browser.");
       }
     }
 
-    window.onload = initMap;
+    // Initialize map tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
 
-    // Form submission handling
-    submitForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      alert('Form submitted successfully!');
+    // Fetch and display current location
+    fetchCurrentLocation();
+
+    // Map click event to update marker and coordinates
+    map.on('click', (e) => {
+      const { lat, lng } = e.latlng;
+
+      if (marker) {
+        marker.setLatLng(e.latlng);
+      } else {
+        marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+      }
+
+      document.getElementById('coordinates').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     });
   </script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initMap&v=weekly" async defer></script>
 </body>
 
 </html>
