@@ -1,11 +1,28 @@
 from django.http import JsonResponse
+from rest_framework import generics
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 import os
-from .models import Prediction
+from .models import *
+from .serializers import *
 from .ml_model import predict_image  # Assuming this is your prediction logic
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
+
+class UserListCreateView(generics.ListCreateAPIView):  # Corrected import
+    """
+    Handles listing all users and creating a new user.
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class UserRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Handles retrieving, updating, and deleting a user.
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated] 
 
 # Create a new prediction
 @api_view(['POST'])
@@ -140,4 +157,3 @@ def delete_prediction(request, prediction_id):
     # Delete the prediction record
     prediction.delete()
     return JsonResponse({'message': 'Prediction deleted successfully'}, status=204)
-

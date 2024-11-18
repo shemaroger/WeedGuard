@@ -4,6 +4,8 @@ from django.conf.urls.static import static
 from .views import *
 
 urlpatterns = [
+    path('users/', UserListCreateView.as_view(), name='user-list-create'),
+    path('users/<int:pk>/', UserRetrieveUpdateDestroyView.as_view(), name='user-detail'),
     path('predict/', predict_view, name='predict'),  # Create
     path('predictions/', list_predictions, name='list_predictions'),  # Read list
     path('predictions/<int:prediction_id>/', get_prediction, name='get_prediction'),  # Read single
