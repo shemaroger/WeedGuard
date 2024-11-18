@@ -26,7 +26,7 @@ class Prediction(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     location = models.CharField(max_length=255, null=True, blank=True)  # GPS coordinates
     site_name = models.CharField(max_length=100, null=True, blank=True)  # Site name
-    farmer = models.CharField(max_length=100, null=True, blank=True)  # Farmer's name or ID
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.result} - {self.timestamp} - {self.site_name or 'Unknown Site'}"
