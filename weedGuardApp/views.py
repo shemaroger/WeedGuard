@@ -1,13 +1,16 @@
 from django.http import JsonResponse
-from rest_framework import generics
+from rest_framework import generics,status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 import os
 from .models import *
 from .serializers import *
 from .ml_model import predict_image  # Assuming this is your prediction logic
 from django.core.files.storage import default_storage
 from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class UserListCreateView(generics.ListCreateAPIView):  # Corrected import
     """
@@ -23,7 +26,28 @@ class UserRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated] 
+class LoginView(APIView):
+    permission_classes = [AllowAny]  # Allow any user to access this view
 
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            # Get the validated data
+            email = serializer.validated_data["email"]
+            user = User.objects.get(email=email)
+            
+            # Generate JWT token for the user
+            refresh = RefreshToken.for_user(user)
+            access_token = refresh.access_token
+
+            # Send the token in response
+            return Response({
+                "access_token": str(access_token),
+                "refresh_token": str(refresh)
+            }, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
 # Create a new prediction
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  # Ensure only authenticated users can access this
