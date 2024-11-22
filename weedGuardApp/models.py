@@ -8,7 +8,7 @@ class User(models.Model):
     fullname = models.CharField(max_length=100)
     email = models.EmailField(max_length=100, unique=True)
     password = models.CharField(max_length=100)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES,default='Farmer')
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
