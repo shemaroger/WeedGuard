@@ -4,7 +4,7 @@ from django.conf.urls.static import static
 from .views import *
 
 urlpatterns = [
-    path('users/', UserListCreateView.as_view(), name='user-list-create'),
+    path('register/', UserListCreateView.as_view(), name='user-list-create'),
     path('users/<int:pk>/', UserRetrieveUpdateDestroyView.as_view(), name='user-detail'),
     path('login/', LoginView.as_view(), name='login'),
     path('predict/', predict_view, name='predict'),  # Create
