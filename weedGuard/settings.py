@@ -56,6 +56,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'weedGuard.urls'
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 
