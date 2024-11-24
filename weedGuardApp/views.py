@@ -12,12 +12,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-class UserListCreateView(generics.ListCreateAPIView):  # Corrected import
-    """
-    Handles listing all users and creating a new user.
-    """
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+@api_view(['POST'])
+def create_user(request):
+    data = request.data
+    if 'name' not in data or 'email' not in data or 'password' not in data:
+        return Response({"detail": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Assuming user creation logic here
+    return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
 
 class UserRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     """

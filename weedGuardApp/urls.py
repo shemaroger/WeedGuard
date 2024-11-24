@@ -2,9 +2,10 @@ from django.conf import settings
 from django.urls import path
 from django.conf.urls.static import static
 from .views import *
+from . import views
 
 urlpatterns = [
-    path('user/', UserListCreateView.as_view(), name='user-list-create'),
+    path('user/', views.create_user, name='user-list-create'),
     path('users/<int:pk>/', UserRetrieveUpdateDestroyView.as_view(), name='user-detail'),
     path('login/', LoginView.as_view(), name='login'),
     path('predict/', predict_view, name='predict'),  # Create

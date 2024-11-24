@@ -3,10 +3,10 @@ from .models import *
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.hashers import check_password
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'fullname', 'email', 'role', 'created_at', 'is_active']
+class UserSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=8)
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
