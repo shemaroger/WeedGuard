@@ -10435,3 +10435,15 @@
 2024-11-26 18:47:33,586 [WARNING] Bad Request: /api/user/
 2024-11-26 18:47:33,595 [WARNING] "POST /api/user/ HTTP/1.1" 400 37
 2024-11-26 19:06:57,553 [INFO] D:\Project\WeedGuard\weedGuard\weedGuardApp\serializers.py changed, reloading.
+2024-11-26 19:09:21,844 [INFO] D:\Project\WeedGuard\weedGuard\weedGuardApp\views.py changed, reloading.
+2024-11-26 19:11:59,859 [INFO] Create user request received with data: {'name': 'SHEMA ', 'email': 'shema@gmail.com', 'password': '123'}
+2024-11-26 19:12:00,186 [ERROR] Validation failed: {'fullname': [ErrorDetail(string='This field is required.', code='required')]}
+2024-11-26 19:12:00,193 [WARNING] Bad Request: /api/user/
+2024-11-26 19:12:00,198 [WARNING] "POST /api/user/ HTTP/1.1" 400 40
+2024-11-26 19:13:29,025 [INFO] D:\Project\WeedGuard\weedGuard\weedGuardApp\serializers.py changed, reloading.
+2024-11-26 19:37:12,824 [INFO] Create user request received with data: {'name': 'SHEMA ', 'email': 'shema@gnail.com', 'password': '123'}
+2024-11-26 19:37:13,283 [ERROR] Validation failed: {'fullname': [ErrorDetail(string='This field is required.', code='required')]}
+2024-11-26 19:37:13,411 [WARNING] Bad Request: /api/user/
+2024-11-26 19:37:13,513 [WARNING] "POST /api/user/ HTTP/1.1" 400 40
+2024-11-26 19:37:42,013 [INFO] - Broken pipe from ('192.168.3.115', 54482)
+2024-11-26 19:40:51,101 [INFO] D:\Project\WeedGuard\weedGuard\weedGuardApp\serializers.py changed, reloading.

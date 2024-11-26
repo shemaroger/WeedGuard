@@ -2,21 +2,25 @@ from rest_framework import serializers
 from .models import *
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import make_password
 
-class UserSerializer(serializers.ModelSerializer): 
+class UserSerializer(serializers.ModelSerializer):
+    # Set the default value of the role field to 'farmer'
+    role = serializers.ChoiceField(choices=User.ROLE_CHOICES, default='farmer')
+
     class Meta:
         model = User
         fields = ['fullname', 'email', 'password', 'role']
 
     def create(self, validated_data):
-        # Create user instance with validated data
+        # Ensure that role is set to 'farmer' if not provided
+        role = validated_data.get('role', 'farmer')  # Default to 'farmer' if not provided
         user = User.objects.create(
             fullname=validated_data['fullname'],
             email=validated_data['email'],
-            role=validated_data.get('role', 'farmer')  # Default to farmer if role not provided
+            role=role
         )
-        # Hash the password before saving
-        user.password = make_password(validated_data['password'])
+        user.password = make_password(validated_data['password'])  # Hash the password
         user.save()
         return user
 

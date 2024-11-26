@@ -29,13 +29,20 @@ def create_user(request):
     data = request.data
     logger.info("Create user request received with data: %s", data)
 
-    if 'name' not in data or 'email' not in data or 'password' not in data:
-        logger.error("Missing required fields in user creation request.")
-        return Response({"detail": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Assuming user creation logic here
-    logger.info("User created successfully.")
-    return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
+    # Use serializer for validation
+    serializer = UserSerializer(data=data)
+    if not serializer.is_valid():
+        logger.error("Validation failed: %s", serializer.errors)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Create and save the user
+        serializer.save()
+        logger.info("User created successfully: %s", serializer.data)
+        return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        logger.error("Error creating user: %s", str(e))
+        return Response({"detail": "Error creating user."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UserRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
