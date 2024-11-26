@@ -3,10 +3,22 @@ from .models import *
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth.hashers import check_password
 
-class UserSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=255)
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True, min_length=8)
+class UserSerializer(serializers.ModelSerializer): 
+    class Meta:
+        model = User
+        fields = ['fullname', 'email', 'password', 'role']
+
+    def create(self, validated_data):
+        # Create user instance with validated data
+        user = User.objects.create(
+            fullname=validated_data['fullname'],
+            email=validated_data['email'],
+            role=validated_data.get('role', 'farmer')  # Default to farmer if role not provided
+        )
+        # Hash the password before saving
+        user.password = make_password(validated_data['password'])
+        user.save()
+        return user
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()

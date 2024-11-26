@@ -1,97 +1,102 @@
-from django.http import JsonResponse
-from rest_framework import generics,status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated,AllowAny
+import logging
 import os
-from .models import *
-from .serializers import *
-from .ml_model import predict_image  # Assuming this is your prediction logic
-from django.core.files.storage import default_storage
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.core.files.storage import default_storage
+from rest_framework import generics, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from .models import *
+from .serializers import LoginSerializer, UserSerializer
+from .ml_model import predict_image  # Assuming this is your prediction logic
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler("app.log"),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 def create_user(request):
     data = request.data
+    logger.info("Create user request received with data: %s", data)
+
     if 'name' not in data or 'email' not in data or 'password' not in data:
+        logger.error("Missing required fields in user creation request.")
         return Response({"detail": "All fields are required."}, status=status.HTTP_400_BAD_REQUEST)
     
     # Assuming user creation logic here
+    logger.info("User created successfully.")
     return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
 
 class UserRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    Handles retrieving, updating, and deleting a user.
-    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated] 
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        logger.info("Retrieve user request by user: %s", request.user)
+        return super().get(request, *args, **kwargs)
+
 class LoginView(APIView):
-    permission_classes = [AllowAny]  # Allow any user to access this view
+    permission_classes = [AllowAny]
 
     def post(self, request):
+        logger.info("Login attempt with data: %s", request.data)
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
-            # Get the validated data
             email = serializer.validated_data["email"]
             user = User.objects.get(email=email)
-            
-            # Generate JWT token for the user
             refresh = RefreshToken.for_user(user)
             access_token = refresh.access_token
 
-            # Send the token in response
+            logger.info("User %s logged in successfully.", email)
             return Response({
                 "access_token": str(access_token),
                 "refresh_token": str(refresh)
             }, status=status.HTTP_200_OK)
 
+        logger.error("Login failed: %s", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-# Create a new prediction
+
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])  # Ensure only authenticated users can access this
+@permission_classes([IsAuthenticated])
 def predict_view(request):
-    """
-    Handles custom prediction requests and directly returns the prediction result.
-    This view will save the prediction details and return them at the same time.
-    """
+    logger.info("Prediction request received from user: %s", request.user)
     if 'image' in request.FILES:
         try:
-            # Retrieve the uploaded image file
             image_file = request.FILES['image']
-            
-            # Save image temporarily
             temp_image_path = os.path.join('temp_images', image_file.name)
             os.makedirs('temp_images', exist_ok=True)
 
-            # Save image to the temp directory
             with open(temp_image_path, 'wb') as f:
                 for chunk in image_file.chunks():
                     f.write(chunk)
 
-            # Perform the prediction using the image
+            logger.info("Image saved temporarily at: %s", temp_image_path)
             prediction_result = predict_image(temp_image_path)
 
-            # Get additional metadata from the request
             location = request.POST.get('location', '')
             site_name = request.POST.get('site_name', '')
 
-            # Save the prediction to the database
             prediction = Prediction.objects.create(
                 image=image_file,
                 result=prediction_result,
                 location=location,
                 site_name=site_name,
-                user=request.user  # Associated with the currently authenticated user
+                user=request.user
             )
-
-            # Clean up the temporary image file after processing
             os.remove(temp_image_path)
 
-            # Serialize the prediction details and return the response
+            logger.info("Prediction saved with ID: %s", prediction.id)
             prediction_data = {
                 'id': prediction.id,
                 'result': prediction_result,
@@ -102,8 +107,10 @@ def predict_view(request):
             return JsonResponse(prediction_data, status=201)
         
         except Exception as e:
+            logger.error("Error during prediction: %s", str(e))
             return JsonResponse({'error': str(e)}, status=500)
     else:
+        logger.warning("No image file provided in prediction request.")
         return JsonResponse({'error': 'No image file provided'}, status=400)
 
 # Read a list of predictions
