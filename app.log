@@ -10447,3 +10447,13 @@
 2024-11-26 19:37:13,513 [WARNING] "POST /api/user/ HTTP/1.1" 400 40
 2024-11-26 19:37:42,013 [INFO] - Broken pipe from ('192.168.3.115', 54482)
 2024-11-26 19:40:51,101 [INFO] D:\Project\WeedGuard\weedGuard\weedGuardApp\serializers.py changed, reloading.
+2024-11-26 19:42:31,630 [INFO] Create user request received with data: {'name': 'SHEMA roger', 'email': 'shema@gmail.com', 'password': '123'}
+2024-11-26 19:42:31,646 [ERROR] Validation failed: {'fullname': [ErrorDetail(string='This field is required.', code='required')]}
+2024-11-26 19:42:31,649 [WARNING] Bad Request: /api/user/
+2024-11-26 19:42:31,651 [WARNING] "POST /api/user/ HTTP/1.1" 400 40
+2024-11-26 19:43:01,417 [INFO] Create user request received with data: {'fullname': 'roger', 'email': 'roger@gmail.com', 'password': '123'}
+2024-11-26 19:43:03,194 [INFO] User created successfully: {'fullname': 'roger', 'email': 'roger@gmail.com', 'password': 'pbkdf2_sha256$870000$DIrrhVTk6luBiW15rLY9xT$E+Wu/3f/Cbj0OchyJHIA71ZMmfrf6buBMWO49gEMjSY=', 'role': 'farmer'}
+2024-11-26 19:43:03,197 [INFO] "POST /api/user/ HTTP/1.1" 201 40
+2024-11-26 19:43:36,746 [INFO] Login attempt with data: {'email': 'roger@gmail.com', 'password': '123'}
+2024-11-26 19:43:38,214 [INFO] User roger@gmail.com logged in successfully.
+2024-11-26 19:43:38,283 [INFO] "POST /api/login/ HTTP/1.1" 200 495
